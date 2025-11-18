@@ -1,0 +1,13 @@
+services:
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: >
+      /bin/sh -c "redis-server --requirepass ${REDIS_PASSWORD}"
+
+volumes:
+  redis-data:

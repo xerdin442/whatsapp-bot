@@ -17,7 +17,11 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "compose:up": "docker-compose up -d",
+    "compose:test": "docker-compose -f compose.test.yml --env-file ./.env.test up -d",
+    "compose:down": "docker-compose down --remove-orphans",
+    "compose:restart": "docker-compose restart"
   },
   "dependencies": {
     "@nestjs/bull": "^11.0.4",
@@ -28,6 +32,8 @@
     "@nestjs/throttler": "^6.4.0",
     "axios": "^1.13.2",
     "bull": "^4.16.5",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.3",
     "helmet": "^8.1.0",
