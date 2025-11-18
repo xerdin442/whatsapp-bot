@@ -23,6 +23,9 @@ export class MessageService {
         messaging_product: 'whatsapp',
         status: 'read',
         message_id: messageId,
+        typing_indicator: {
+          type: 'text',
+        },
       });
       await this.httpInstance.post('messages', payload);
 
