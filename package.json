@@ -24,6 +24,7 @@
     "compose:restart": "docker-compose restart"
   },
   "dependencies": {
+    "@google/genai": "^1.30.0",
     "@nestjs/bull": "^11.0.4",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",

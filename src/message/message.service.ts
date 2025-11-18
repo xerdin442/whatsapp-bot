@@ -2,12 +2,13 @@ import { Injectable } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import { Secrets } from '@src/common/secrets';
 import { IncomingMessage } from '@src/common/types';
+import { GeminiService } from '@src/gemini/gemini.service';
 
 @Injectable()
 export class MessageService {
   private readonly httpInstance: AxiosInstance;
 
-  constructor() {
+  constructor(private readonly gemini: GeminiService) {
     this.httpInstance = axios.create({
       baseURL: `https://graph.facebook.com/${Secrets.WHATSAPP_API_VERSION}/${Secrets.WHATSAPP_PHONE_NUMBER_ID}/`,
       headers: {
@@ -43,6 +44,8 @@ export class MessageService {
 
       if (message.type === 'text') {
         const text = message.text.body;
+        const response = await this.gemini.generateResponse(text);
+
         const payload = JSON.stringify({
           messaging_product: 'whatsapp',
           recipient_type: 'individual',
@@ -50,7 +53,7 @@ export class MessageService {
           type: 'text',
           text: {
             preview_url: false,
-            body: 'Response from NestJS WhatsApp Bot! You said: ' + text,
+            body: response,
           },
         });
 

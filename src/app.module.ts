@@ -7,6 +7,7 @@ import { Secrets } from './common/secrets';
 import { applyThrottlerConfig } from './common/util/helper';
 import { RedisModule } from './redis/redis.module';
 import { MessageModule } from './message/message.module';
+import { GeminiModule } from './gemini/gemini.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { MessageModule } from './message/message.module';
     ThrottlerModule.forRoot(applyThrottlerConfig()),
     RedisModule,
     MessageModule,
+    GeminiModule,
   ],
   controllers: [AppController],
 })
