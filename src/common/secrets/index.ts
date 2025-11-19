@@ -30,4 +30,5 @@ export const Secrets = {
     'WHATSAPP_BUSINESS_ACCOUNT_ID',
   ),
   GEMINI_API_KEY: config.getOrThrow<string>('GEMINI_API_KEY'),
+  HASHING_SALT: config.getOrThrow<string>('HASHING_SALT'),
 };

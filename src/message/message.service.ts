@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import { Secrets } from '@src/common/secrets';
-import { IncomingMessage } from '@src/common/types';
+import { IncomingMessage, MessageReplyPayload } from '@src/common/types';
 import { GeminiService } from '@src/gemini/gemini.service';
 
 @Injectable()
@@ -44,23 +44,27 @@ export class MessageService {
 
       if (message.type === 'text') {
         const text = message.text.body;
-        const response = await this.gemini.generateResponse(text);
+        const response = await this.gemini.generateModelResponse(sender, text);
 
-        const payload = JSON.stringify({
+        const payload: MessageReplyPayload = {
           messaging_product: 'whatsapp',
           recipient_type: 'individual',
           to: sender,
           type: 'text',
+          context: {
+            message_id: messageId,
+          },
           text: {
             preview_url: false,
             body: response,
           },
-        });
+        };
 
+        // Mark incoming message as read and send reply
         await this.markMessageAsRead(messageId);
-        await this.httpInstance.post('messages', payload);
+        await this.httpInstance.post('messages', JSON.stringify(payload));
 
-        console.log('Message sent successfully');
+        console.log('Reply sent successfully');
         return;
       }
     } catch (error) {
