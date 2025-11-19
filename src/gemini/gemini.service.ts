@@ -1,5 +1,6 @@
 import {
   Content,
+  FunctionCall,
   GenerateContentResponse,
   GoogleGenAI,
   Part,
@@ -7,11 +8,7 @@ import {
 import { Inject, Injectable } from '@nestjs/common';
 import logger from '@src/common/logger';
 import { Secrets } from '@src/common/secrets';
-import {
-  ConversationContext,
-  ConversationState,
-  ModelResponse,
-} from '@src/common/types';
+import { ConversationContext, ConversationState } from '@src/common/types';
 import { REDIS_CLIENT } from '@src/redis/redis.module';
 import { createHmac } from 'crypto';
 import { RedisClientType } from 'redis';
@@ -36,8 +33,9 @@ export class GeminiService {
   getNextStateAfterFunctionCall(funcName: string): ConversationState {
     if (funcName.includes('events')) return 'event_selected';
     if (funcName.includes('tier')) return 'ticket_tier_selected';
-    if (funcName.includes('purchase')) return 'awaiting_payment';
-    if (funcName.includes('status')) return 'completed';
+    if (funcName.includes('initiate')) return 'awaiting_payment';
+    if (funcName.includes('status')) return 'payment_status_check';
+    if (funcName.includes('confirm')) return 'completed';
 
     throw new Error('Invalid function name');
   }
@@ -106,10 +104,12 @@ export class GeminiService {
   async processUserMessage(
     phoneId: string,
     userInput: string,
-  ): Promise<ModelResponse> {
+  ): Promise<string | FunctionCall> {
     try {
       let currentState: ConversationState;
       let contentsFromHistory: Content[] = [];
+      let result: string | FunctionCall;
+      const modelContextPart: Part = {};
 
       // Fetch current conversation history
       const chatHistory = await this.getChatHistory(phoneId);
@@ -135,30 +135,55 @@ export class GeminiService {
       const firstPart = modelResponse.candidates?.[0].content?.parts?.[0];
       if (firstPart && firstPart.functionCall) {
         // Determine the next conversation state based on the function call
-        const newState = this.getNextStateAfterFunctionCall(
+        currentState = this.getNextStateAfterFunctionCall(
           firstPart.functionCall.name!,
         );
 
-        return { output: firstPart.functionCall, newState, phoneId };
+        result = firstPart.functionCall;
+        modelContextPart.functionCall = result;
       } else {
-        return { output: modelResponse.text!, newState: currentState };
+        result = modelResponse.text!;
+        modelContextPart.text = result;
       }
+
+      // Add user input to conversation history
+      const userContext: ConversationContext = {
+        content: { role: 'user', parts: [{ text: userInput }] },
+        currentState,
+      };
+      await this.updateChatHistory(phoneId, userContext);
+
+      // Add model response to conversation history
+      const modelContext: ConversationContext = {
+        content: { role: 'model', parts: [modelContextPart] },
+        currentState,
+      };
+      await this.updateChatHistory(phoneId, modelContext);
+
+      return result;
     } catch (error) {
       logger.error(
         `[${this.context}] Error processing user message with Gemini: ${error.message}`,
       );
 
-      return {
-        output: 'Sorry, I am unable to process your request at the moment.',
-        newState: 'response_error',
+      // Update conversation history with response generation error
+      const modelContext: ConversationContext = {
+        content: {
+          role: 'model',
+          parts: [{ text: 'Response generation error' }],
+        },
+        currentState: 'response_error',
       };
+      await this.updateChatHistory(phoneId, modelContext);
+
+      return 'Sorry, I am unable to process your request at the moment.';
     }
   }
 
   async processFunctionCall(
     phoneId: string,
     apiContext: Record<string, any>,
-  ): Promise<ModelResponse> {
+  ): Promise<string> {
     try {
       // Fetch current conversation history
       const chatHistory = await this.getChatHistory(phoneId);
@@ -166,7 +191,7 @@ export class GeminiService {
       // Get current state
       const currentState = chatHistory[chatHistory.length - 1].currentState;
 
-      // Retreive details of last function call
+      // Retrieve details of last function call
       const contentsFromHistory = chatHistory.map((chat) => chat.content);
       const lastFunctionCallRecord = contentsFromHistory.findLast(
         (record) => record.role === 'model' && record.parts?.[0].functionCall,
@@ -175,11 +200,11 @@ export class GeminiService {
         throw new Error('Missing function call in conversation history');
       }
 
-      // Define the function response
-      const toolCall = lastFunctionCallRecord.parts?.[0].functionCall;
+      // Define the response from the function call
+      const functionCall = lastFunctionCallRecord.parts?.[0].functionCall;
       const functionResponsePart: Part = {
         functionResponse: {
-          name: toolCall?.name,
+          name: functionCall?.name,
           response: apiContext, // Data from the backend service passed as context to the model
         },
       };
@@ -197,16 +222,37 @@ export class GeminiService {
       const finalState: ConversationState =
         currentState === 'completed' ? 'initial' : currentState;
 
-      return { output: modelResponse.text!, newState: finalState };
+      // Add function call to conversation history
+      const userContext: ConversationContext = {
+        content: { role: 'function', parts: [functionResponsePart] },
+        currentState: finalState,
+      };
+      await this.updateChatHistory(phoneId, userContext);
+
+      // Add model final response to conversation history
+      const modelContext: ConversationContext = {
+        content: { role: 'model', parts: [{ text: modelResponse.text }] },
+        currentState: finalState,
+      };
+      await this.updateChatHistory(phoneId, modelContext);
+
+      return modelResponse.text!;
     } catch (error) {
       logger.error(
         `[${this.context}] Error processing function call with Gemini: ${error.message}`,
       );
 
-      return {
-        output: 'Sorry, I am unable to process your request at the moment.',
-        newState: 'response_error',
+      // Update conversation history with response generation error
+      const modelContext: ConversationContext = {
+        content: {
+          role: 'model',
+          parts: [{ text: 'Response generation error' }],
+        },
+        currentState: 'response_error',
       };
+      await this.updateChatHistory(phoneId, modelContext);
+
+      return 'Sorry, I am unable to process your request at the moment.';
     }
   }
 }

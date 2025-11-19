@@ -98,6 +98,15 @@ const checkPaymentStatus: FunctionDeclaration = {
   },
 };
 
+const confirmTicketPurchase: FunctionDeclaration = {
+  name: 'confirm_ticket_purchase',
+  description: 'Confirms that ticket purchase transaction is successful',
+  parameters: {
+    type: Type.OBJECT,
+    properties: {},
+  },
+};
+
 export const REQUIRED_TOOLS: Tool = {
   functionDeclarations: [
     findEventsByDate,
@@ -106,5 +115,6 @@ export const REQUIRED_TOOLS: Tool = {
     selectTicketTier,
     initiateTicketPurchase,
     checkPaymentStatus,
+    confirmTicketPurchase,
   ],
 };

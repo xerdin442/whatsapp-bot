@@ -1,4 +1,4 @@
-import { Content, FunctionCall } from '@google/genai';
+import { Content } from '@google/genai';
 import { Request } from 'express';
 
 export interface IncomingMessage {
@@ -44,16 +44,11 @@ export type ConversationState =
   | 'event_selected'
   | 'ticket_tier_selected'
   | 'awaiting_payment'
+  | 'payment_status_check'
   | 'completed'
   | 'response_error';
 
 export interface ConversationContext {
   content: Content;
   currentState: ConversationState;
-}
-
-export interface ModelResponse {
-  output: string | FunctionCall;
-  newState: ConversationState;
-  phoneId?: string;
 }
