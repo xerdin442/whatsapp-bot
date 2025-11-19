@@ -4,14 +4,18 @@ import { Secrets } from '@src/common/secrets';
 import { IncomingMessage, MessageReplyPayload } from '@src/common/types';
 import { GeminiService } from '@src/gemini/gemini.service';
 import logger from '@src/common/logger';
+import { ApiService } from '@src/backend';
 
 @Injectable()
 export class MessageService {
   private readonly httpInstance: AxiosInstance;
 
-  constructor(private readonly gemini: GeminiService) {
+  constructor(
+    private readonly gemini: GeminiService,
+    private readonly apiService: ApiService,
+  ) {
     this.httpInstance = axios.create({
-      baseURL: `https://graph.facebook.com/${Secrets.WHATSAPP_API_VERSION}/${Secrets.WHATSAPP_PHONE_NUMBER_ID}/`,
+      baseURL: `${Secrets.WHATSAPP_MESSAGING_API_URL}`,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${Secrets.WHATSAPP_USER_ACCESS_TOKEN}`,

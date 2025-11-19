@@ -19,16 +19,17 @@ export const Secrets = {
   WHATSAPP_WEBHOOK_VERIFICATION_TOKEN: config.getOrThrow<string>(
     'WHATSAPP_WEBHOOK_VERIFICATION_TOKEN',
   ),
-  WHATSAPP_API_VERSION: config.getOrThrow<string>('WHATSAPP_API_VERSION'),
+  WHATSAPP_MESSAGING_API_URL: config.getOrThrow<string>(
+    'WHATSAPP_MESSAGING_API_URL',
+  ),
   WHATSAPP_USER_ACCESS_TOKEN: config.getOrThrow<string>(
     'WHATSAPP_USER_ACCESS_TOKEN',
-  ),
-  WHATSAPP_PHONE_NUMBER_ID: config.getOrThrow<string>(
-    'WHATSAPP_PHONE_NUMBER_ID',
   ),
   WHATSAPP_BUSINESS_ACCOUNT_ID: config.getOrThrow<string>(
     'WHATSAPP_BUSINESS_ACCOUNT_ID',
   ),
   GEMINI_API_KEY: config.getOrThrow<string>('GEMINI_API_KEY'),
   HASHING_SALT: config.getOrThrow<string>('HASHING_SALT'),
+  BACKEND_SERVICE_API_KEY: config.getOrThrow<string>('BACKEND_SERVICE_API_KEY'),
+  BACKEND_SERVICE_URL: config.getOrThrow<string>('BACKEND_SERVICE_URL'),
 };

@@ -12,8 +12,8 @@ import { ConversationContext, ConversationState } from '@src/common/types';
 import { REDIS_CLIENT } from '@src/redis/redis.module';
 import { createHmac } from 'crypto';
 import { RedisClientType } from 'redis';
-import { SYSTEM_INSTRUCTIONS } from './instructions';
-import { REQUIRED_TOOLS } from './functions';
+import { SYSTEM_INSTRUCTIONS } from './helpers/instructions';
+import { REQUIRED_TOOLS } from './helpers/functions';
 
 @Injectable()
 export class GeminiService {
@@ -31,11 +31,10 @@ export class GeminiService {
   }
 
   getNextStateAfterFunctionCall(funcName: string): ConversationState {
-    if (funcName.includes('events')) return 'event_selected';
+    if (funcName.includes('find')) return 'event_query';
+    if (funcName.includes('select_event')) return 'event_selected';
     if (funcName.includes('tier')) return 'ticket_tier_selected';
     if (funcName.includes('initiate')) return 'awaiting_payment';
-    if (funcName.includes('status')) return 'payment_status_check';
-    if (funcName.includes('confirm')) return 'completed';
 
     throw new Error('Invalid function name');
   }
@@ -45,7 +44,7 @@ export class GeminiService {
     context: ConversationContext,
   ): Promise<void> {
     try {
-      const cacheKey = this.createHash(phoneId);
+      const cacheKey = `chat_history:${this.createHash(phoneId)}`;
       await this.redis.rPush(cacheKey, JSON.stringify(context));
 
       // Clear stored contexts in chat history after 6 hours
@@ -61,7 +60,7 @@ export class GeminiService {
 
   async getChatHistory(phoneId: string): Promise<ConversationContext[]> {
     try {
-      const cacheKey = this.createHash(phoneId);
+      const cacheKey = `chat_history:${this.createHash(phoneId)}`;
       const cacheResult = await this.redis.lRange(cacheKey, 0, -1);
 
       if (cacheResult.length > 0) {
@@ -218,21 +217,17 @@ export class GeminiService {
       // Generate model response
       const modelResponse = await this.generateModelResponse(contents);
 
-      // Reset conversation state if ticket purchase is complete
-      const finalState: ConversationState =
-        currentState === 'completed' ? 'initial' : currentState;
-
       // Add function call to conversation history
       const userContext: ConversationContext = {
         content: { role: 'function', parts: [functionResponsePart] },
-        currentState: finalState,
+        currentState,
       };
       await this.updateChatHistory(phoneId, userContext);
 
-      // Add model final response to conversation history
+      // Add model's final response to conversation history
       const modelContext: ConversationContext = {
         content: { role: 'model', parts: [{ text: modelResponse.text }] },
-        currentState: finalState,
+        currentState,
       };
       await this.updateChatHistory(phoneId, modelContext);
 

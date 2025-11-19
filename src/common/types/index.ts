@@ -41,14 +41,27 @@ export interface MessageReplyPayload {
 
 export type ConversationState =
   | 'initial'
+  | 'event_query'
   | 'event_selected'
   | 'ticket_tier_selected'
   | 'awaiting_payment'
-  | 'payment_status_check'
   | 'completed'
   | 'response_error';
 
 export interface ConversationContext {
   content: Content;
   currentState: ConversationState;
+}
+
+export interface Event {
+  id: number;
+  title: string;
+  description: string;
+  date: Date;
+  startTime: Date;
+  endTime: Date;
+  ageRestriction?: number;
+  venue: string;
+  address: string;
+  poster: string;
 }
