@@ -1,4 +1,5 @@
 import { Process, Processor } from '@nestjs/bull';
+import { Inject } from '@nestjs/common';
 import logger from '@src/common/logger';
 import { Secrets } from '@src/common/secrets';
 import {
@@ -7,19 +8,24 @@ import {
   PaymentWebhookPayload,
 } from '@src/common/types';
 import { GeminiService } from '@src/gemini/gemini.service';
+import { REDIS_CLIENT } from '@src/redis/redis.module';
 import axios from 'axios';
 import { Job } from 'bull';
+import { RedisClientType } from 'redis';
 
 @Processor('payments-queue')
 export class PaymentsProcessor {
   private readonly context: string = PaymentsProcessor.name;
 
-  constructor(private readonly gemini: GeminiService) {}
+  constructor(
+    private readonly gemini: GeminiService,
+    @Inject(REDIS_CLIENT) private readonly redis: RedisClientType,
+  ) {}
 
   @Process('webhook')
   async handlePaymentWebhook(job: Job<PaymentWebhookPayload>) {
     try {
-      const { status, phoneId, email } = job.data;
+      const { status, phoneId, email, reason, reference } = job.data;
 
       // Update conversation history with payment status
       const paymentContext: ConversationContext = {
@@ -29,7 +35,7 @@ export class PaymentsProcessor {
             {
               functionResponse: {
                 name: 'initiate_ticket_purchase',
-                response: { status, email },
+                response: { status, email, reason },
               },
             },
           ],
@@ -68,6 +74,10 @@ export class PaymentsProcessor {
           },
         },
       );
+
+      // Store notification ID in Redis to prevent duplicate processing
+      const cacheKey = `payment_notification:${reference}`;
+      await this.redis.setEx(cacheKey, 24 * 3600, reference);
 
       return;
     } catch (error) {

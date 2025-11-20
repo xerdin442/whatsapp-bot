@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PaymentsController } from './payments.controller';
 import { BullModule } from '@nestjs/bull';
+import { PaymentsProcessor } from './payments.processor';
 
 @Module({
   imports: [
@@ -9,5 +10,6 @@ import { BullModule } from '@nestjs/bull';
     }),
   ],
   controllers: [PaymentsController],
+  providers: [PaymentsProcessor],
 })
 export class PaymentsModule {}

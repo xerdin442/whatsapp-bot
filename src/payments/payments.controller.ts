@@ -3,28 +3,34 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
+  Inject,
   Post,
   Req,
   Res,
 } from '@nestjs/common';
 import logger from '@src/common/logger';
 import { Secrets } from '@src/common/secrets';
+import { REDIS_CLIENT } from '@src/redis/redis.module';
 import { Queue } from 'bull';
 import { createHmac } from 'crypto';
 import { Request, Response } from 'express';
+import { RedisClientType } from 'redis';
 
 @Controller('payments')
 export class PaymentsController {
+  private readonly context: string = PaymentsController.name;
+
   constructor(
+    @Inject(REDIS_CLIENT) private readonly redis: RedisClientType,
     @InjectQueue('payments-queue') private readonly paymentsQueue: Queue,
   ) {}
 
   @HttpCode(HttpStatus.OK)
-  @Post('payments/callback')
+  @Post('callback')
   async checkPaymentStatus(@Req() req: Request, @Res() res: Response) {
     try {
       const signature = createHmac('sha256', Secrets.BACKEND_SERVICE_API_KEY)
-        .update(JSON.stringify(req.body))
+        .update(JSON.stringify(req.body.reference))
         .digest('hex');
       const receivedSignature = req.headers['x-webhook-signature'];
 
@@ -38,7 +44,17 @@ export class PaymentsController {
         return;
       }
 
-      // Verify notification ID to ensure idempotent procssing (redis store for 24hrs)
+      // Verify notification ID to ensure idempotent procssing
+      const cacheKey = `payment_notification:${req.body.reference}`;
+      const cacheResult = await this.redis.get(cacheKey);
+
+      if (cacheResult) {
+        logger.warn(
+          `Duplicate payment notification received. Webhook reference: ${req.body.reference}`,
+        );
+
+        return;
+      }
 
       // Process payment notification
       await this.paymentsQueue.add('webhook', req.body);
