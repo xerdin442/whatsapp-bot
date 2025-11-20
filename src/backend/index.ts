@@ -142,8 +142,6 @@ export class ApiService {
     email: string,
     phoneId: string,
   ): Promise<{ checkout: string } | { message: string }> {
-    // fetch purchase details from redis
-    // add email and generate checkout link from backend
     try {
       const cacheKey = `ticket_purchase:${createHashedKey(phoneId)}`;
       const cacheResult = await this.redis.get(cacheKey);
@@ -159,7 +157,12 @@ export class ApiService {
       const details = JSON.parse(cacheResult) as Record<string, any>;
 
       // Configure request payload
-      const payload = JSON.stringify({ ...details, email });
+      const payload = JSON.stringify({
+        tier: details.tierName as string,
+        quantity: +details.quantity,
+        email,
+        whatsappPhoneId: phoneId,
+      });
 
       // Send request to backend service
       const response = await this.httpInstance.post<ApiResponse>(
