@@ -15,7 +15,11 @@ const findEventsByFilters: FunctionDeclaration = {
       },
       location: {
         type: Type.STRING,
-        description: `The city or venue where the event is taking place.`,
+        description: `The town, city, or state where the event is taking place.`,
+      },
+      venue: {
+        type: Type.STRING,
+        description: `The venue where the event is taking place.`,
       },
       startDate: {
         type: Type.STRING,
@@ -60,9 +64,9 @@ const findEventsByFilters: FunctionDeclaration = {
       },
       numberOfQueries: {
         type: Type.NUMBER,
-        description: `The number of times this function is called to retrieve more events on the list.
-          Acts as a cursor to paginate the results of the function call. Default is 1 for the first call.
-          Resets to default value when another function is called`,
+        description: `Acts as a cursor to paginate the results of this function call when it is called consecutively
+          with the same parameters to retrieve more events. Default is 1 for the first call.
+          Value increments by 1 for each call. Resets to default value when another function is called`,
       },
     },
     required: ['numberOfQueries'],
@@ -78,9 +82,9 @@ const findNearbyEvents: FunctionDeclaration = {
     properties: {
       numberOfQueries: {
         type: Type.NUMBER,
-        description: `The number of times this function is called to retrieve more events on the list.
-          Acts as a cursor to paginate the results of the function call. Default is 1 for the first call.
-          Resets to default value when another function is called`,
+        description: `Acts as a cursor to paginate the results of this function call when it is called consecutively
+          with the same parameters to retrieve more events. Default is 1 for the first call.
+          Value increments by 1 for each call. Resets to default value when another function is called`,
       },
     },
     required: ['numberOfQueries'],
@@ -92,21 +96,13 @@ const findTrendingEvents: FunctionDeclaration = {
   description: 'Retrieves a list of the most popular and trending events',
   parameters: {
     type: Type.OBJECT,
-    properties: {
-      numberOfQueries: {
-        type: Type.NUMBER,
-        description: `The number of times this function is called to retrieve more events on the list.
-          Acts as a cursor to paginate the results of the function call. Default is 1 for the first call.
-          Resets to default value when another function is called`,
-      },
-    },
-    required: ['numberOfQueries'],
+    properties: {},
   },
 };
 
 const selectEvent: FunctionDeclaration = {
   name: 'select_event',
-  description: `Returns the ID of the event selected by the user.
+  description: `Returns a list of ticket tiers available for the specific event selected by the user.
     This function is called after the user has selected a specific event from a list of options presented to them.`,
   parameters: {
     type: Type.OBJECT,
@@ -123,21 +119,27 @@ const selectEvent: FunctionDeclaration = {
 const selectTicketTier: FunctionDeclaration = {
   name: 'select_ticket_tier',
   description:
-    'Retrieves a list of ticket tiers available for a specific event',
+    'Stores the name of the selected ticket tier and the purchase quantity',
   parameters: {
     type: Type.OBJECT,
     properties: {
+      eventId: {
+        type: Type.NUMBER,
+        description: `The ID of the event the ticket tier belongs to.
+          Must match the ID of the specific event earlier selected by the user.`,
+      },
       tierName: {
         type: Type.STRING,
-        description: 'The name of the ticket tier the user intends to purchase',
+        description: `The name of the ticket tier the user intends to purchase.
+          This must match the names of the ticket tiers available in the selected event.`,
       },
       quantity: {
         type: Type.NUMBER,
         description:
-          'The number of tickets the user intends to purchase in this tier',
+          'The number of tickets the user intends to purchase in the selected tier',
       },
     },
-    required: ['tierName', 'quantity'],
+    required: ['eventId', 'tierName', 'quantity'],
   },
 };
 

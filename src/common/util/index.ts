@@ -1,5 +1,6 @@
 import { ThrottlerModuleOptions } from '@nestjs/throttler';
 import { Secrets } from '../secrets';
+import { createHmac } from 'crypto';
 
 export const applyThrottlerConfig = (): ThrottlerModuleOptions => {
   const throttles = [
@@ -16,4 +17,8 @@ export const applyThrottlerConfig = (): ThrottlerModuleOptions => {
   ];
 
   return Secrets.NODE_ENV !== 'test' ? throttles : [];
+};
+
+export const createHashedKey = (key: string): string => {
+  return createHmac('sha256', Secrets.HASHING_SALT).update(key).digest('hex');
 };

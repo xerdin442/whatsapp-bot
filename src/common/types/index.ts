@@ -1,4 +1,5 @@
 import { Content } from '@google/genai';
+import { AxiosResponse } from 'axios';
 import { Request } from 'express';
 
 export interface IncomingMessage {
@@ -30,7 +31,7 @@ export interface MessageReplyPayload {
   recipient_type: 'individual';
   to: string;
   type: 'text';
-  context: {
+  context?: {
     message_id: string;
   };
   text: {
@@ -64,4 +65,26 @@ export interface Event {
   venue: string;
   address: string;
   poster: string;
+}
+
+export type DiscountStatus = 'ACTIVE' | 'ENDED';
+
+export interface TicketTier {
+  name: string;
+  id: number;
+  price: number;
+  discount: boolean;
+  discountPrice?: number;
+  discountExpiration?: Date;
+  numberOfDiscountTickets?: number;
+  discountStatus?: DiscountStatus;
+  benefits?: string;
+  totalNumberOfTickets: number;
+  soldOut: boolean;
+}
+
+export interface ApiResponse extends AxiosResponse {
+  events?: Event[];
+  checkout?: string;
+  tickets?: TicketTier[];
 }

@@ -4,7 +4,7 @@ import { BullModule } from '@nestjs/bull';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { Secrets } from './common/secrets';
-import { applyThrottlerConfig } from './common/util/helper';
+import { applyThrottlerConfig } from './common/util';
 import { RedisModule } from './redis/redis.module';
 import { MessageModule } from './message/message.module';
 import { GeminiModule } from './gemini/gemini.module';

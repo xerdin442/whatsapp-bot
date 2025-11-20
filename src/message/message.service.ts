@@ -8,6 +8,7 @@ import { ApiService } from '@src/backend';
 
 @Injectable()
 export class MessageService {
+  private readonly context: string = MessageService.name;
   private readonly httpInstance: AxiosInstance;
 
   constructor(
@@ -63,13 +64,13 @@ export class MessageService {
           // Model makes a function call (requires context from backend service)
           const functionCall = firstResponse;
 
-          // Retrieve data from backend service based on function name
-          const apiData = { ...functionCall };
+          // Retrieve data from backend service to be used as context
+          const apiContext = await this.apiService.selectEndpoint(functionCall);
 
           // Process results of function call and generate final response
           const secondResponse = await this.gemini.processFunctionCall(
             senderId,
-            apiData,
+            apiContext,
           );
 
           finalResponse = secondResponse;
@@ -94,7 +95,7 @@ export class MessageService {
         await this.markMessageAsRead(messageId);
         await this.httpInstance.post('messages', JSON.stringify(payload));
 
-        logger.info('Reply sent successfully');
+        logger.info(`[${this.context}] Reply sent successfully`);
         return;
       }
     } catch (error) {

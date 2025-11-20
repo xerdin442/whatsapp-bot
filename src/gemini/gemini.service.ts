@@ -10,10 +10,10 @@ import logger from '@src/common/logger';
 import { Secrets } from '@src/common/secrets';
 import { ConversationContext, ConversationState } from '@src/common/types';
 import { REDIS_CLIENT } from '@src/redis/redis.module';
-import { createHmac } from 'crypto';
 import { RedisClientType } from 'redis';
 import { SYSTEM_INSTRUCTIONS } from './helpers/instructions';
 import { REQUIRED_TOOLS } from './helpers/functions';
+import { createHashedKey } from '@src/common/util';
 
 @Injectable()
 export class GeminiService {
@@ -22,12 +22,6 @@ export class GeminiService {
 
   constructor(@Inject(REDIS_CLIENT) private readonly redis: RedisClientType) {
     this.gemini = new GoogleGenAI({ apiKey: Secrets.GEMINI_API_KEY });
-  }
-
-  createHash(phoneId: string): string {
-    return createHmac('sha256', Secrets.HASHING_SALT)
-      .update(phoneId)
-      .digest('hex');
   }
 
   getNextStateAfterFunctionCall(funcName: string): ConversationState {
@@ -44,7 +38,7 @@ export class GeminiService {
     context: ConversationContext,
   ): Promise<void> {
     try {
-      const cacheKey = `chat_history:${this.createHash(phoneId)}`;
+      const cacheKey = `chat_history:${createHashedKey(phoneId)}`;
       await this.redis.rPush(cacheKey, JSON.stringify(context));
 
       // Clear stored contexts in chat history after 6 hours
@@ -60,7 +54,7 @@ export class GeminiService {
 
   async getChatHistory(phoneId: string): Promise<ConversationContext[]> {
     try {
-      const cacheKey = `chat_history:${this.createHash(phoneId)}`;
+      const cacheKey = `chat_history:${createHashedKey(phoneId)}`;
       const cacheResult = await this.redis.lRange(cacheKey, 0, -1);
 
       if (cacheResult.length > 0) {
