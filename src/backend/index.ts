@@ -60,14 +60,20 @@ export class ApiService {
 
   async findEventsByFilters(args: Record<string, any>): Promise<Event[]> {
     try {
-      const payload = JSON.stringify({
-        ...args,
-        page: args.numberOfQueries as number,
-      });
+      const params = new URLSearchParams();
 
-      const response = await this.httpInstance.post<ApiResponse>(
-        'events',
-        payload,
+      for (const key in args) {
+        const value = args[key] as string | string[];
+
+        if (Array.isArray(value)) {
+          value.forEach((item) => params.append(key, item));
+        } else if (value !== undefined && value !== null) {
+          params.append(key, value);
+        }
+      }
+
+      const response = await this.httpInstance.get<ApiResponse>(
+        `events?${params.toString()}`,
       );
 
       return response.data.events!;
