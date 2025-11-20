@@ -66,7 +66,7 @@ const findEventsByFilters: FunctionDeclaration = {
         type: Type.NUMBER,
         description: `Acts as a cursor to paginate the results of this function call when it is called consecutively
           with the same parameters to retrieve more events. Default is 1 for the first call.
-          Value increments by 1 for each call. Resets to default value when another function is called`,
+          Value increments by 1 for each consecutive call. Resets to default value when another function is called`,
       },
     },
     required: ['numberOfQueries'],
@@ -84,7 +84,7 @@ const findNearbyEvents: FunctionDeclaration = {
         type: Type.NUMBER,
         description: `Acts as a cursor to paginate the results of this function call when it is called consecutively
           with the same parameters to retrieve more events. Default is 1 for the first call.
-          Value increments by 1 for each call. Resets to default value when another function is called`,
+          Value increments by 1 for each consecutive call. Resets to default value when another function is called`,
       },
     },
     required: ['numberOfQueries'],
