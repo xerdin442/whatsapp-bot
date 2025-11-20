@@ -8,6 +8,7 @@ import { applyThrottlerConfig } from './common/util';
 import { RedisModule } from './redis/redis.module';
 import { MessageModule } from './message/message.module';
 import { GeminiModule } from './gemini/gemini.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { GeminiModule } from './gemini/gemini.module';
     RedisModule,
     MessageModule,
     GeminiModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
 })

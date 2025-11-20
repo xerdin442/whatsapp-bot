@@ -40,6 +40,14 @@ export interface MessageReplyPayload {
   };
 }
 
+export interface PaymentWebhookPayload {
+  reference: string;
+  status: 'success' | 'failed' | 'refund';
+  phoneId: string;
+  email: string;
+  reason?: string;
+}
+
 export type ConversationState =
   | 'initial'
   | 'event_query'
