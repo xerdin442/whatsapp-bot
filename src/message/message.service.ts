@@ -50,6 +50,38 @@ export class MessageService {
     }
   }
 
+  async sendLocationRequest(phoneId: string, messageId: string): Promise<void> {
+    try {
+      // Configure request payload
+      const payload: MessageReplyPayload = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: phoneId,
+        type: 'interactive',
+        context: {
+          message_id: messageId,
+        },
+        interactive: {
+          type: 'location_request_message',
+          body: {
+            text: 'To help us find nearby events, please share your location.',
+          },
+          action: {
+            name: 'send_location',
+          },
+        },
+      };
+
+      // Mark incoming message as read and send reply
+      await this.markMessageAsRead(messageId);
+      await this.httpInstance.post('messages', JSON.stringify(payload));
+
+      return;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async handleIncomingMessage(message: IncomingMessage) {
     try {
       const senderId = message.from;
@@ -59,10 +91,10 @@ export class MessageService {
         let finalResponse: string;
 
         // Process incoming message from user
-        const userInput = message.text.body;
+        const userInput = message.text?.body;
         const firstResponse = await this.gemini.processUserMessage(
           senderId,
-          userInput,
+          userInput as string,
         );
 
         if (typeof firstResponse === 'string') {
@@ -73,15 +105,24 @@ export class MessageService {
           const functionCall = firstResponse;
 
           // Retrieve data from backend service to be used as context
-          const apiContext = await this.apiService.selectEndpoint(functionCall);
+          if (functionCall.name === 'find_nearby_events') {
+            // Send a location request to the user to get coordinates
+            await this.sendLocationRequest(senderId, messageId);
 
-          // Process results of function call and generate final response
-          const secondResponse = await this.gemini.processFunctionCall(
-            senderId,
-            apiContext,
-          );
+            return;
+          } else {
+            // Handle other function calls (e.g., find_events_by_filters)
+            const apiContext =
+              await this.apiService.selectEndpoint(functionCall);
 
-          finalResponse = secondResponse;
+            // Process results of function call and generate final response
+            const secondResponse = await this.gemini.processFunctionCall(
+              senderId,
+              apiContext,
+            );
+
+            finalResponse = secondResponse;
+          }
         }
 
         // Configure request payload
@@ -94,7 +135,7 @@ export class MessageService {
             message_id: messageId,
           },
           text: {
-            preview_url: false,
+            preview_url: true,
             body: finalResponse,
           },
         };
@@ -102,10 +143,44 @@ export class MessageService {
         // Mark incoming message as read and send reply
         await this.markMessageAsRead(messageId);
         await this.httpInstance.post('messages', JSON.stringify(payload));
+      } else if (message.type === 'location') {
+        // Extract coordinates from location message
+        const { latitude, longitude } = message.location!;
 
-        logger.info(`[${this.context}] Reply sent successfully`);
-        return;
+        // Fetch nearby events from backend service
+        const apiContext = await this.apiService.getNearbyEvents(
+          latitude,
+          longitude,
+        );
+
+        // Update function call with nearby events result
+        const finalResponse = await this.gemini.processFunctionCall(
+          senderId,
+          apiContext,
+        );
+
+        // Configure request payload
+        const payload: MessageReplyPayload = {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: senderId,
+          type: 'text',
+          context: {
+            message_id: messageId,
+          },
+          text: {
+            preview_url: true,
+            body: finalResponse,
+          },
+        };
+
+        // Mark incoming message as read and send reply
+        await this.markMessageAsRead(messageId);
+        await this.httpInstance.post('messages', JSON.stringify(payload));
       }
+
+      logger.info(`[${this.context}] Reply sent successfully`);
+      return;
     } catch (error) {
       throw error;
     }

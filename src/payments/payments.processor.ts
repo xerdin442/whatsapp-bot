@@ -60,7 +60,7 @@ export class PaymentsProcessor {
         to: phoneId,
         type: 'text',
         text: {
-          preview_url: false,
+          preview_url: true,
           body: response.text || 'Payment completed successfully!',
         },
       };

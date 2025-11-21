@@ -32,9 +32,6 @@ export class ApiService {
         case 'find_events':
           return this.findEventsByFilters(funcCall.args!);
 
-        // case 'find_nearby_events':
-        //   return this.getNearbyEvents(funcCall.args!);
-
         case 'find_trending_events':
           return this.getTrendingEvents();
 
@@ -58,7 +55,9 @@ export class ApiService {
     }
   }
 
-  async findEventsByFilters(args: Record<string, any>): Promise<Event[]> {
+  async findEventsByFilters(
+    args: Record<string, any>,
+  ): Promise<{ events: Event[] }> {
     try {
       const params = new URLSearchParams();
 
@@ -76,7 +75,7 @@ export class ApiService {
         `events?${params.toString()}`,
       );
 
-      return response.data.events!;
+      return { events: response.data.events! };
     } catch (error) {
       logger.error(
         `[${this.context}] Error fetching upcoming events by filters: ${error.message}`,
@@ -86,14 +85,31 @@ export class ApiService {
     }
   }
 
-  // async getNearbyEvents(args: Record<string, any>): Promise<Event[]> {}
+  async getNearbyEvents(
+    latitude: number,
+    longitude: number,
+  ): Promise<{ events: Event[] }> {
+    try {
+      const response = await this.httpInstance.get<ApiResponse>(
+        `events/nearby?latitude=${latitude}&longitude=${longitude}`,
+      );
 
-  async getTrendingEvents(): Promise<Event[]> {
+      return { events: response.data.events! };
+    } catch (error) {
+      logger.error(
+        `[${this.context}] Error fetching nearby events: ${error.message}`,
+      );
+
+      throw error;
+    }
+  }
+
+  async getTrendingEvents(): Promise<{ events: Event[] }> {
     try {
       const response =
         await this.httpInstance.get<ApiResponse>('events/trending');
 
-      return response.data.events!;
+      return { events: response.data.events! };
     } catch (error) {
       logger.error(
         `[${this.context}] Error fetching all trending events: ${error.message}`,
@@ -103,13 +119,13 @@ export class ApiService {
     }
   }
 
-  async selectEvent(eventId: number): Promise<TicketTier[]> {
+  async selectEvent(eventId: number): Promise<{ tickets: TicketTier[] }> {
     try {
       const response = await this.httpInstance.get<ApiResponse>(
         `events/${eventId}/tickets`,
       );
 
-      return response.data.tickets!;
+      return { tickets: response.data.tickets! };
     } catch (error) {
       logger.error(
         `[${this.context}] Error fetching available ticket tiers for an event: ${error.message}`,

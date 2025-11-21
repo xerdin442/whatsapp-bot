@@ -2,13 +2,25 @@ import { Content } from '@google/genai';
 import { AxiosResponse } from 'axios';
 import { Request } from 'express';
 
+export type IncomingMessageType = 'text' | 'location';
+
 export interface IncomingMessage {
+  context?: {
+    from: string;
+    id: string;
+  };
   from: string;
   id: string;
   timestamp: string;
-  type: string;
-  text: {
+  type: IncomingMessageType;
+  text?: {
     body: string;
+  };
+  location?: {
+    address?: string;
+    latitude: number;
+    longitude: number;
+    name?: string;
   };
 }
 
@@ -26,17 +38,28 @@ export interface WebhookRequest extends Request {
   };
 }
 
+export type MessageReplyType = 'text' | 'interactive';
+
 export interface MessageReplyPayload {
   messaging_product: 'whatsapp';
   recipient_type: 'individual';
   to: string;
-  type: 'text';
+  type: MessageReplyType;
   context?: {
     message_id: string;
   };
-  text: {
-    preview_url: false;
+  text?: {
+    preview_url: true;
     body: string;
+  };
+  interactive?: {
+    type: 'location_request_message';
+    body: {
+      text: string;
+    };
+    action: {
+      name: 'send_location';
+    };
   };
 }
 
