@@ -102,7 +102,7 @@ export class GeminiService {
       let currentState: ConversationState;
       let contentsFromHistory: Content[] = [];
       let result: string | FunctionCall;
-      const modelContextPart: Part = {};
+      let modelContextPart: Part;
 
       // Fetch current conversation history
       const chatHistory = await this.getChatHistory(phoneId);
@@ -133,10 +133,10 @@ export class GeminiService {
         );
 
         result = firstPart.functionCall;
-        modelContextPart.functionCall = result;
+        modelContextPart = { functionCall: result };
       } else {
         result = modelResponse.text!;
-        modelContextPart.text = result;
+        modelContextPart = { text: result ?? '' };
       }
 
       // Add user input to conversation history
@@ -198,7 +198,7 @@ export class GeminiService {
       const functionResponsePart: Part = {
         functionResponse: {
           name: functionCall?.name,
-          response: apiContext, // Data from the backend service passed as context to the model
+          response: { apiContext }, // Data from the backend service passed as context to the model
         },
       };
 

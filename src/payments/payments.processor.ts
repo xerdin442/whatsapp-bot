@@ -28,6 +28,7 @@ export class PaymentsProcessor {
       const { status, phoneId, email, reason, reference } = job.data;
 
       // Update conversation history with payment status
+      const functionResult = { status, email, reason };
       const paymentContext: ConversationContext = {
         content: {
           role: 'function',
@@ -35,7 +36,7 @@ export class PaymentsProcessor {
             {
               functionResponse: {
                 name: 'initiate_ticket_purchase',
-                response: { status, email, reason },
+                response: { functionResult },
               },
             },
           ],

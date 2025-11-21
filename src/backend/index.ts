@@ -68,7 +68,7 @@ export class ApiService {
         if (Array.isArray(value)) {
           value.forEach((item) => params.append(key, item));
         } else if (value !== undefined && value !== null) {
-          params.append(key, value);
+          params.append(key === 'numberOfQueries' ? 'page' : key, value);
         }
       }
 
