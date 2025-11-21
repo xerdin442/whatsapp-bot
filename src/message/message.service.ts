@@ -15,13 +15,21 @@ export class MessageService {
     private readonly gemini: GeminiService,
     private readonly apiService: ApiService,
   ) {
-    this.httpInstance = axios.create({
-      baseURL: `${Secrets.WHATSAPP_MESSAGING_API_URL}`,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${Secrets.WHATSAPP_USER_ACCESS_TOKEN}`,
-      },
-    });
+    try {
+      this.httpInstance = axios.create({
+        baseURL: `${Secrets.WHATSAPP_MESSAGING_API_URL}`,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${Secrets.WHATSAPP_USER_ACCESS_TOKEN}`,
+        },
+      });
+    } catch (error) {
+      logger.error(
+        `[${this.context}] Error connecting to WhatsApp Cloud API: ${error.message}`,
+      );
+
+      throw error;
+    }
   }
 
   async markMessageAsRead(messageId: string) {
