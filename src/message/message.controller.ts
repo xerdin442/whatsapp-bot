@@ -12,10 +12,13 @@ import { WebhookRequest } from '@src/common/types';
 import { Request } from 'express';
 import { MessageService } from './message.service';
 import { Secrets } from '@src/common/secrets';
+import logger from '@src/common/logger';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('message')
 export class MessageController {
+  private readonly context: string = MessageController.name;
+
   constructor(private readonly messageService: MessageService) {}
 
   @Get('webhook')
@@ -62,6 +65,10 @@ export class MessageController {
 
       await this.messageService.handleIncomingMessage(message);
     } catch (error) {
+      logger.error(
+        `[${this.context}] An error occured while handling incoming message. Error: ${error.message}`,
+      );
+
       throw error;
     }
   }
