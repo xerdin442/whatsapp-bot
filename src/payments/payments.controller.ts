@@ -1,5 +1,6 @@
 import { InjectQueue } from '@nestjs/bull';
 import {
+  ClassSerializerInterceptor,
   Controller,
   HttpCode,
   HttpStatus,
@@ -7,6 +8,7 @@ import {
   Post,
   Req,
   Res,
+  UseInterceptors,
 } from '@nestjs/common';
 import logger from '@src/common/logger';
 import { Secrets } from '@src/common/secrets';
@@ -16,6 +18,7 @@ import { createHmac } from 'crypto';
 import { Request, Response } from 'express';
 import { RedisClientType } from 'redis';
 
+@UseInterceptors(ClassSerializerInterceptor)
 @Controller('payments')
 export class PaymentsController {
   private readonly context: string = PaymentsController.name;

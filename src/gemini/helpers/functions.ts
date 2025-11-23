@@ -79,15 +79,7 @@ const findNearbyEvents: FunctionDeclaration = {
     'Retrieves a list of upcoming events happening close to the user',
   parameters: {
     type: Type.OBJECT,
-    properties: {
-      numberOfQueries: {
-        type: Type.NUMBER,
-        description: `Acts as a cursor to paginate the results of this function call when it is called consecutively
-          with the same parameters to retrieve more events. Default is 1 for the first call.
-          Value increments by 1 for each consecutive call. Resets to default value when another function is called`,
-      },
-    },
-    required: ['numberOfQueries'],
+    properties: {},
   },
 };
 

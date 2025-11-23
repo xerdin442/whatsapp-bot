@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import { Secrets } from '@src/common/secrets';
-import { IncomingMessage, MessageReplyPayload } from '@src/common/types';
+import {
+  ConversationContext,
+  Event,
+  IncomingMessage,
+  MessageReplyPayload,
+} from '@src/common/types';
 import { GeminiService } from '@src/gemini/gemini.service';
 import logger from '@src/common/logger';
 import { ApiService } from '@src/backend';
@@ -82,6 +87,46 @@ export class MessageService {
     }
   }
 
+  async sendInteractiveBtnMessage(phoneId: string, event: Event) {
+    try {
+      // Configure request payload
+      const payload: MessageReplyPayload = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: phoneId,
+        type: 'interactive',
+        interactive: {
+          type: 'button',
+          header: {
+            type: 'image',
+            image: {
+              id: event.whatsappImageId,
+            },
+          },
+          body: {
+            text: `Do you want to attend ${event.title}?`,
+          },
+          action: {
+            buttons: [
+              {
+                type: 'reply',
+                reply: {
+                  id: `I want to attend event with ID: ${event.id}`,
+                  title: 'Select',
+                },
+              },
+            ],
+          },
+        },
+      };
+
+      await this.httpInstance.post('messages', JSON.stringify(payload));
+      return;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async handleIncomingMessage(message: IncomingMessage) {
     try {
       const senderId = message.from;
@@ -111,9 +156,42 @@ export class MessageService {
 
             return;
           } else {
-            // Handle other function calls (e.g., find_events_by_filters)
             const apiContext =
               await this.apiService.selectEndpoint(functionCall);
+
+            // Send interactive buttton messages if context is a list of events
+            if (functionCall.name?.startsWith('find_')) {
+              const events = apiContext.events as Event[];
+
+              if (events.length > 0) {
+                // Add function result to conversation history
+                const functionResult: ConversationContext = {
+                  content: {
+                    role: 'function',
+                    parts: [
+                      {
+                        functionResponse: {
+                          name: functionCall.name,
+                          response: { apiContext },
+                        },
+                      },
+                    ],
+                  },
+                  currentState: 'event_query',
+                };
+                await this.gemini.updateChatHistory(senderId, functionResult);
+
+                // Mark incoming message as read
+                await this.markMessageAsRead(messageId);
+
+                // Send list of events (trending or filter search results) to user
+                for (const event of events) {
+                  await this.sendInteractiveBtnMessage(senderId, event);
+                }
+
+                return;
+              }
+            }
 
             // Process results of function call and generate final response
             const secondResponse = await this.gemini.processFunctionCall(
@@ -153,7 +231,36 @@ export class MessageService {
           longitude,
         );
 
-        // Update function call with nearby events result
+        if (apiContext.events.length > 0) {
+          // Add function result to conversation history
+          const functionResult: ConversationContext = {
+            content: {
+              role: 'function',
+              parts: [
+                {
+                  functionResponse: {
+                    name: 'find_nearby_events',
+                    response: { apiContext },
+                  },
+                },
+              ],
+            },
+            currentState: 'event_query',
+          };
+          await this.gemini.updateChatHistory(senderId, functionResult);
+
+          // Mark incoming message as read
+          await this.markMessageAsRead(messageId);
+
+          // Send list of nearby events to user
+          for (const event of apiContext.events) {
+            await this.sendInteractiveBtnMessage(senderId, event);
+          }
+
+          return;
+        }
+
+        // Update function call with empty nearby events result
         const finalResponse = await this.gemini.processFunctionCall(
           senderId,
           apiContext,
@@ -174,7 +281,58 @@ export class MessageService {
           },
         };
 
-        // Mark incoming message as read and send reply
+        // Mark incoming message as read and inform the user that there are no events
+        await this.markMessageAsRead(messageId);
+        await this.httpInstance.post('messages', JSON.stringify(payload));
+      } else if (message.type === 'interactive') {
+        if (!message.interactive) {
+          throw new Error(
+            'Invalid webhook response for interactive button message',
+          );
+        }
+
+        // Extract details of user's choice and pass as context to model
+        const userInput = message.interactive.button_reply.id;
+        const firstResponse = await this.gemini.processUserMessage(
+          senderId,
+          userInput,
+        );
+
+        // Verify that model's response is a function call
+        if (typeof firstResponse === 'string') {
+          throw new Error('Incorrect model response. Expected a function call');
+        }
+
+        // Verify details of function call
+        const functionCall = firstResponse;
+        if (functionCall.name !== 'select_event') {
+          throw new Error(
+            `Incorrect function call from model. Expected "select_event", received: "${functionCall.name}"`,
+          );
+        }
+
+        const apiContext = await this.apiService.selectEndpoint(functionCall);
+        const finalResponse = await this.gemini.processFunctionCall(
+          senderId,
+          apiContext,
+        );
+
+        // Configure request payload
+        const payload: MessageReplyPayload = {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: senderId,
+          type: 'text',
+          context: {
+            message_id: messageId,
+          },
+          text: {
+            preview_url: true,
+            body: finalResponse,
+          },
+        };
+
+        // Mark incoming message as read and send available ticket tiers to user
         await this.markMessageAsRead(messageId);
         await this.httpInstance.post('messages', JSON.stringify(payload));
       }

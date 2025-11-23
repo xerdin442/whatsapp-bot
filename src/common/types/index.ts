@@ -2,8 +2,6 @@ import { Content } from '@google/genai';
 import { AxiosResponse } from 'axios';
 import { Request } from 'express';
 
-export type IncomingMessageType = 'text' | 'location';
-
 export interface IncomingMessage {
   context?: {
     from: string;
@@ -12,7 +10,7 @@ export interface IncomingMessage {
   from: string;
   id: string;
   timestamp: string;
-  type: IncomingMessageType;
+  type: 'text' | 'location' | 'interactive';
   text?: {
     body: string;
   };
@@ -21,6 +19,13 @@ export interface IncomingMessage {
     latitude: number;
     longitude: number;
     name?: string;
+  };
+  interactive?: {
+    type: 'button_reply';
+    button_reply: {
+      id: string;
+      title: string;
+    };
   };
 }
 
@@ -38,13 +43,11 @@ export interface WebhookRequest extends Request {
   };
 }
 
-export type MessageReplyType = 'text' | 'interactive';
-
 export interface MessageReplyPayload {
   messaging_product: 'whatsapp';
   recipient_type: 'individual';
   to: string;
-  type: MessageReplyType;
+  type: 'text' | 'interactive';
   context?: {
     message_id: string;
   };
@@ -53,12 +56,25 @@ export interface MessageReplyPayload {
     body: string;
   };
   interactive?: {
-    type: 'location_request_message';
+    type: 'location_request_message' | 'button';
+    header?: {
+      type: 'image';
+      image: {
+        id: string;
+      };
+    };
     body: {
       text: string;
     };
     action: {
-      name: 'send_location';
+      name?: 'send_location';
+      buttons?: {
+        type: 'reply';
+        reply: {
+          id: string;
+          title: string;
+        };
+      }[];
     };
   };
 }
@@ -95,10 +111,8 @@ export interface Event {
   ageRestriction?: number;
   venue: string;
   address: string;
-  poster: string;
+  whatsappImageId: string;
 }
-
-export type DiscountStatus = 'ACTIVE' | 'ENDED';
 
 export interface TicketTier {
   name: string;
@@ -108,7 +122,7 @@ export interface TicketTier {
   discountPrice?: number;
   discountExpiration?: Date;
   numberOfDiscountTickets?: number;
-  discountStatus?: DiscountStatus;
+  discountStatus?: 'ACTIVE' | 'ENDED';
   benefits?: string;
   totalNumberOfTickets: number;
   soldOut: boolean;

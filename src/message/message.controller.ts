@@ -1,16 +1,19 @@
 import {
+  ClassSerializerInterceptor,
   Controller,
   Get,
   HttpCode,
   HttpStatus,
   Post,
   Req,
+  UseInterceptors,
 } from '@nestjs/common';
 import { WebhookRequest } from '@src/common/types';
 import { Request } from 'express';
 import { MessageService } from './message.service';
 import { Secrets } from '@src/common/secrets';
 
+@UseInterceptors(ClassSerializerInterceptor)
 @Controller('message')
 export class MessageController {
   constructor(private readonly messageService: MessageService) {}

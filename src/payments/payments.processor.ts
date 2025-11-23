@@ -53,6 +53,10 @@ export class PaymentsProcessor {
       const response =
         await this.gemini.generateModelResponse(contentsFromHistory);
 
+      const reply = response.text?.startsWith('Sorry, ')
+        ? 'Payment completed successfully!'
+        : response.text!;
+
       // Send response to user
       const payload: MessageReplyPayload = {
         messaging_product: 'whatsapp',
@@ -61,7 +65,7 @@ export class PaymentsProcessor {
         type: 'text',
         text: {
           preview_url: true,
-          body: response.text || 'Payment completed successfully!',
+          body: reply,
         },
       };
 
