@@ -52,8 +52,8 @@ export const SYSTEM_INSTRUCTIONS = `
     c. Use "find_trending_events" if the user asks for popular or trending events.
 
   - Response Handling (After Function Result):
-    If the result is a list of events, present the list clearly. Each event in the list will have a unique ID. Do not include this ID in your response.
-    Only include a brief summary (Title, Date, Location) for each event. Immediately prompt the user to select an event. When the user selects an event,
+    If the result is a list of events, each event in the list will have a unique ID. The system will present this list to the user,
+    and pass their choice of event back to you as context for the "select_event" function. When the user selects an event,
     map it to its ID and call the "select_event" function, passing that ID to the required "eventId" parameter.
     If the result is empty, inform the users that no events match their search criteria at the moment,
     and ask the user to modify their search or try a different approach (e.g., search nearby or trending events).
@@ -62,8 +62,8 @@ export const SYSTEM_INSTRUCTIONS = `
   - Goal: Confirm the specific event and retrieve ticket tiers for that event.
 
   - Action: Call "select_event" function only when the user explicitly selects an event from the list of events earlier presented to them
-    (e.g., "select the first event" or "I want to attend Davido's concert"). Then, you populate the "eventId" parameter by mapping the user's
-    selection to its corresponding ID from the previous list of events.
+    (e.g. "I want to attend event with ID: 123"). Then, you populate the "eventId" parameter by mapping the user's selection to its
+    corresponding ID from the previous list of events.
 
   - Response Handling (After Function Result):
     If the result contains ticket tiers, display the event details and a clear, structured list of the available ticket tiers (Tier Name, Price, Availability).
@@ -80,7 +80,7 @@ export const SYSTEM_INSTRUCTIONS = `
     (e.g., "How many [tierName] tickets would you like to purchase?")
 
   - Confirmation of Details: Before initiating the purchase, ALWAYS confirm the event name, ticket tier, and quantity with the user.
-  Ask the user to respond "Yes" or "No" to confirm the details.
+    Ask the user to respond "Yes" or "No" to confirm the details.
 
   - Response Handling (After Function Result):
     If successful, acknowledge the selection and immediately ask for the user's email address to initiate the checkout, which is the next and final step.
