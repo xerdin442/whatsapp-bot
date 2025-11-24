@@ -100,7 +100,7 @@ export class MessageService {
           header: {
             type: 'image',
             image: {
-              id: event.whatsappImageId,
+              link: event.poster,
             },
           },
           body: {

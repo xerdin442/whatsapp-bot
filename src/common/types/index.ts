@@ -60,7 +60,7 @@ export interface MessageReplyPayload {
     header?: {
       type: 'image';
       image: {
-        id: string;
+        link: string;
       };
     };
     body: {
@@ -111,7 +111,7 @@ export interface Event {
   ageRestriction?: number;
   venue: string;
   address: string;
-  whatsappImageId: string;
+  poster: string;
 }
 
 export interface TicketTier {
