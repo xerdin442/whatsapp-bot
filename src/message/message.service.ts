@@ -10,6 +10,7 @@ import {
 import { GeminiService } from '@src/gemini/gemini.service';
 import logger from '@src/common/logger';
 import { ApiService } from '@src/backend';
+import { formatDate } from '@src/common/util';
 
 @Injectable()
 export class MessageService {
@@ -104,7 +105,8 @@ export class MessageService {
             },
           },
           body: {
-            text: `Do you want to attend ${event.title}?`,
+            text: `${event.title.toUpperCase()}\n\n
+              Date: ${formatDate(event.date, 'date')}`,
           },
           action: {
             buttons: [
