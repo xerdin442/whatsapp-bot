@@ -1,9 +1,9 @@
-import { ThrottlerModuleOptions } from '@nestjs/throttler';
+import { ThrottlerModuleOptions, ThrottlerOptions } from '@nestjs/throttler';
 import { Secrets } from '../secrets';
 import { createHmac } from 'crypto';
 
 export const applyThrottlerConfig = (): ThrottlerModuleOptions => {
-  const throttles = [
+  const throttles: ThrottlerOptions[] = [
     {
       name: 'Seconds',
       ttl: 1000,
