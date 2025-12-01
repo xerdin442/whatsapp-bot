@@ -105,8 +105,7 @@ export class MessageService {
             },
           },
           body: {
-            text: `${event.title.toUpperCase()}\n\n
-              Date: ${formatDate(event.date, 'date')}`,
+            text: `${event.title.toUpperCase()}\n\nDate: ${formatDate(event.date)}`,
           },
           action: {
             buttons: [
@@ -158,8 +157,10 @@ export class MessageService {
 
             return;
           } else {
-            const apiContext =
-              await this.apiService.selectEndpoint(functionCall);
+            const apiContext = await this.apiService.selectEndpoint(
+              functionCall,
+              senderId,
+            );
 
             // Send interactive buttton messages if context is a list of events
             if (functionCall.name?.startsWith('find_')) {
