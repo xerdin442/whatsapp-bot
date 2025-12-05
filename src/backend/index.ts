@@ -141,7 +141,7 @@ export class ApiService {
   ): Promise<{ message: string }> {
     try {
       // Store purchase details in cache
-      const cacheKey = `ticket_purchase:${createHashedKey(phoneId)}`;
+      const cacheKey = `whatsapp_bot:ticket_purchase:${createHashedKey(phoneId)}`;
       await this.redis.setEx(cacheKey, 3 * 3600, JSON.stringify({ ...args }));
 
       return { message: 'Ticket purchase details stored in cache' };
@@ -159,7 +159,7 @@ export class ApiService {
     phoneId: string,
   ): Promise<{ checkout: string } | { message: string }> {
     try {
-      const cacheKey = `ticket_purchase:${createHashedKey(phoneId)}`;
+      const cacheKey = `whatsapp_bot:ticket_purchase:${createHashedKey(phoneId)}`;
       const cacheResult = await this.redis.get(cacheKey);
 
       if (!cacheResult) {

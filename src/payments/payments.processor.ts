@@ -81,13 +81,13 @@ export class PaymentsProcessor {
       );
 
       // Store notification ID in Redis to prevent duplicate processing
-      const cacheKey = `payment_notification:${reference}`;
+      const cacheKey = `whatsapp_bot:payment_notification:${reference}`;
       await this.redis.setEx(cacheKey, 24 * 3600, reference);
 
       return;
     } catch (error) {
       logger.error(
-        `[${this.context}] Error processing webhook notification. Error: ${error.message}`,
+        `[${this.context}] Error processing webhook notification. Error: ${error.message}. Data: ${error.response.data}`,
       );
 
       throw error;

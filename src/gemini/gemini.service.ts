@@ -38,7 +38,7 @@ export class GeminiService {
     context: ConversationContext,
   ): Promise<void> {
     try {
-      const cacheKey = `chat_history:${createHashedKey(phoneId)}`;
+      const cacheKey = `whatsapp_bot:chat_history:${createHashedKey(phoneId)}`;
       await this.redis.rPush(cacheKey, JSON.stringify(context));
 
       // Clear stored contexts in chat history after 6 hours
@@ -54,7 +54,7 @@ export class GeminiService {
 
   async getChatHistory(phoneId: string): Promise<ConversationContext[]> {
     try {
-      const cacheKey = `chat_history:${createHashedKey(phoneId)}`;
+      const cacheKey = `whatsapp_bot:chat_history:${createHashedKey(phoneId)}`;
       const cacheResult = await this.redis.lRange(cacheKey, 0, -1);
 
       if (cacheResult.length > 0) {

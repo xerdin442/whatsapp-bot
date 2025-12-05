@@ -38,22 +38,26 @@ export class PaymentsController {
       const receivedSignature = req.headers['x-webhook-signature'];
 
       if (!receivedSignature) {
-        logger.warn(`Payment notification missing signature header.`);
+        logger.warn(
+          `[${this.context}] Payment notification missing signature header.`,
+        );
         return;
       }
 
       if (signature !== (receivedSignature as string)) {
-        logger.warn(`Payment notification signature mismatch.`);
+        logger.warn(
+          `[${this.context}] Payment notification signature mismatch.`,
+        );
         return;
       }
 
       // Verify notification ID to ensure idempotent procssing
-      const cacheKey = `payment_notification:${req.body.reference}`;
+      const cacheKey = `whatsapp_bot:payment_notification:${req.body.reference}`;
       const cacheResult = await this.redis.get(cacheKey);
 
       if (cacheResult) {
         logger.warn(
-          `Duplicate payment notification received. Webhook reference: ${req.body.reference}`,
+          `[${this.context}] Duplicate payment notification received. Webhook reference: ${req.body.reference}`,
         );
 
         return;
@@ -66,7 +70,10 @@ export class PaymentsController {
       res.status(200).send('Payment notification processed');
       return;
     } catch (error) {
-      logger.error(`Error processing payment notification: ${error.message}`);
+      logger.error(
+        `[${this.context}] Error processing payment notification: ${error.message}`,
+      );
+
       throw error;
     }
   }
