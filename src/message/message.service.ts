@@ -188,10 +188,11 @@ export class MessageService {
                 await this.markMessageAsRead(messageId);
 
                 // Send list of events (trending or filter search results) to user
-                for (const event of events) {
-                  await this.sendInteractiveBtnMessage(senderId, event);
-                  await new Promise((delay) => setTimeout(delay, 300));
-                }
+                await Promise.allSettled(
+                  events.map(async (event) => {
+                    await this.sendInteractiveBtnMessage(senderId, event);
+                  }),
+                );
 
                 return;
               }
