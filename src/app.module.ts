@@ -20,7 +20,11 @@ import { PaymentsModule } from './payments/payments.module';
         password:
           Secrets.NODE_ENV !== 'test' ? Secrets.REDIS_PASSWORD : undefined,
         family: 0,
+        tls: {
+          rejectUnauthorized: false,
+        },
       },
+      prefix: 'whatsapp-bot',
     }),
     ThrottlerModule.forRoot(applyThrottlerConfig()),
     RedisModule,

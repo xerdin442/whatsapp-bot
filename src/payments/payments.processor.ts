@@ -28,7 +28,7 @@ export class PaymentsProcessor {
       const { status, phoneId, email, reason, reference } = job.data;
 
       // Update conversation history with payment status
-      const functionResult = { status, email, reason };
+      const apiContext = { status, email, reason };
       const paymentContext: ConversationContext = {
         content: {
           role: 'function',
@@ -36,7 +36,7 @@ export class PaymentsProcessor {
             {
               functionResponse: {
                 name: 'initiate_ticket_purchase',
-                response: { functionResult },
+                response: { apiContext },
               },
             },
           ],
@@ -79,6 +79,16 @@ export class PaymentsProcessor {
           },
         },
       );
+
+      // Update conversation history with model response
+      const modelContext: ConversationContext = {
+        content: {
+          role: 'model',
+          parts: [{ text: reply }],
+        },
+        currentState: 'completed',
+      };
+      await this.gemini.updateChatHistory(phoneId, modelContext);
 
       // Store notification ID in Redis to prevent duplicate processing
       const cacheKey = `whatsapp_bot:payment_notification:${reference}`;

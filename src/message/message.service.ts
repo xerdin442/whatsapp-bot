@@ -190,6 +190,7 @@ export class MessageService {
                 // Send list of events (trending or filter search results) to user
                 for (const event of events) {
                   await this.sendInteractiveBtnMessage(senderId, event);
+                  await new Promise((delay) => setTimeout(delay, 300));
                 }
 
                 return;
@@ -258,6 +259,7 @@ export class MessageService {
           // Send list of nearby events to user
           for (const event of apiContext.events) {
             await this.sendInteractiveBtnMessage(senderId, event);
+            await new Promise((delay) => setTimeout(delay, 300));
           }
 
           return;
