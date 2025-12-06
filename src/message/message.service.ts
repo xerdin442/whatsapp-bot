@@ -258,10 +258,11 @@ export class MessageService {
           await this.markMessageAsRead(messageId);
 
           // Send list of nearby events to user
-          for (const event of apiContext.events) {
-            await this.sendInteractiveBtnMessage(senderId, event);
-            await new Promise((delay) => setTimeout(delay, 300));
-          }
+          await Promise.allSettled(
+            apiContext.events.map(async (event) => {
+              await this.sendInteractiveBtnMessage(senderId, event);
+            }),
+          );
 
           return;
         }
